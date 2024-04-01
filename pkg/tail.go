@@ -24,11 +24,36 @@ type TailIf struct {
 	Addrs []*netlink.Addr
 }
 
+func (t *TailIf) validateNlLink(nlLink netlink.Link) bool {
+	return nlLink.Attrs().Name == t.Name
+}
+
+func (t *TailIf) IsUp() bool {
+	var err error
+	var nlLink netlink.Link
+
+	if nlLink, err = t.GetLink(); err != nil {
+		return false
+	}
+
+	if addr, err := netlink.AddrList(nlLink, unix.AF_INET); err != nil {
+		return false
+	} else {
+		for _, k := range addr {
+			if ValidTailnetAddr4(k.IPNet) {
+				return true
+			}
+		}
+
+		return false
+	}
+}
+
 func (t *TailIf) SetDown(nlLink netlink.Link) error {
 	var err error
 	var linkAddrs []netlink.Addr
 
-	if nlLink.Attrs().Name != t.Name {
+	if !t.validateNlLink(nlLink) {
 		return fmt.Errorf("got interface %s expected %s", nlLink.Attrs().Name, t.Name)
 	}
 
@@ -56,7 +81,7 @@ func (t *TailIf) SetUp(nlLink netlink.Link) error {
 	var err error
 	var linkAddrs []netlink.Addr
 
-	if nlLink.Attrs().Name != t.Name {
+	if !t.validateNlLink(nlLink) {
 		return fmt.Errorf("got interface %s expected %s", nlLink.Attrs().Name, t.Name)
 	}
 
@@ -83,4 +108,25 @@ func (t *TailIf) SetUp(nlLink netlink.Link) error {
 	}
 
 	return nil
+}
+
+func (t *TailIf) LinkExists() bool {
+	nlLink, err := t.GetLink()
+	return err == nil && nlLink != nil
+}
+
+func (t *TailIf) GetLink() (netlink.Link, error) {
+	return netlink.LinkByName(t.Name)
+}
+
+func (t *TailIf) Sync() error {
+	if nlink, err := t.GetLink(); err != nil {
+		return err
+	} else {
+		if t.IsUp() {
+			return t.SetUp(nlink)
+		} else {
+			return t.SetDown(nlink)
+		}
+	}
 }
