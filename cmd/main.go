@@ -134,16 +134,15 @@ func main() {
 	slog.Info("using interface name", "name", inst.iface)
 
 	if len(inst.addrs) == 0 {
-		slog.Error("no addresses to listen to")
-		os.Exit(1) // todo: this is an error for now, whilst this program has one use
+		slog.Info("no addresses to manage")
 	} else {
 		for _, addr := range inst.addrs {
 			slog.Info("managing", "address", addr.String())
 		}
 	}
 
-	slog.Info("Registered ExecUp commands", "len(ExecUp)", len(inst.execUp))
-	slog.Info("Registered ExecDown commands", "len(ExecDown)", len(inst.execDown))
+	slog.Info("registered ExecUp commands", "len(ExecUp)", len(inst.execUp))
+	slog.Info("registered ExecDown commands", "len(ExecDown)", len(inst.execDown))
 
 	tailIface := tnetmgr.TailIf{
 		Name:      inst.iface,

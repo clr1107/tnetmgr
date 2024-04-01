@@ -97,7 +97,7 @@ func (t *TailIf) SetDown(nlLink netlink.Link) error {
 		slog.Debug("ExecDown", "command", cmd)
 
 		if err := cmd.Run(); err != nil {
-			slog.Info("ExecDown command failed", "command", cmd, "error", err.Error())
+			slog.Warn("ExecDown command failed", "command", cmd, "error", err.Error())
 		}
 	}
 
@@ -140,7 +140,7 @@ func (t *TailIf) SetUp(nlLink netlink.Link) error {
 		slog.Debug("ExecUp", "command", cmd)
 
 		if err := cmd.Run(); err != nil {
-			slog.Info("ExecDown command failed", "command", cmd, "error", err.Error())
+			slog.Warn("ExecDown command failed", "command", cmd, "error", err.Error())
 		}
 	}
 
