@@ -34,24 +34,35 @@ func initSlog() {
 	}
 }
 
-func setConfigDefaults() {
+func setEnvDefaults() {
+	viper.SetEnvPrefix("TNETMGR")
+
+	viper.BindEnv("CONFIG_DIR")
+	viper.BindEnv("LOGLEVEL")
+
 	viper.SetDefault("CONFIG_DIR", "/etc/tnetmgr")
 	viper.SetDefault("LOGLEVEL", "INFO")
+}
+
+func setConfigDefaults() {
 	viper.SetDefault("Iface", "tailscale0")
+	viper.SetDefault("ExecShell", "/usr/bin/bash -c")
+	viper.SetDefault("ExecUp", []string{})
+	viper.SetDefault("ExecDown", []string{})
 }
 
 type config struct {
-	Iface string
-	Addrs []string
+	Iface     string
+	Addrs     []string
+	ExecShell string
+	ExecUp    []string
+	ExecDown  []string
 }
 
 var conf *config
 
 func init() {
-	viper.SetEnvPrefix("TNETMGR")
-	viper.BindEnv("CONFIG_DIR")
-	viper.BindEnv("LOGLEVEL")
-
+	setEnvDefaults()
 	setConfigDefaults()
 
 	initSlog()
@@ -73,8 +84,11 @@ func init() {
 }
 
 type instance struct {
-	iface string
-	addrs []*netlink.Addr
+	iface     string
+	addrs     []*netlink.Addr
+	execShell string
+	execUp    []string
+	execDown  []string
 }
 
 func parseConfig(conf *config) (*instance, error) {
@@ -94,6 +108,10 @@ func parseConfig(conf *config) (*instance, error) {
 		}
 	}
 	ret.addrs = addrs
+
+	ret.execShell = conf.ExecShell
+	ret.execUp = conf.ExecUp
+	ret.execDown = conf.ExecDown
 
 	return &ret, nil
 }
@@ -124,17 +142,24 @@ func main() {
 		}
 	}
 
+	slog.Info("Registered ExecUp commands", "len(ExecUp)", len(inst.execUp))
+	slog.Info("Registered ExecDown commands", "len(ExecDown)", len(inst.execDown))
+
 	tailIface := tnetmgr.TailIf{
-		Name:  inst.iface,
-		Addrs: inst.addrs,
+		Name:      inst.iface,
+		Addrs:     inst.addrs,
+		ExecShell: inst.execShell,
+		ExecUp:    inst.execUp,
+		ExecDown:  inst.execDown,
 	}
 
 	if _, err = tailIface.GetLink(); err == nil {
+		slog.Debug("Syncing interface")
 		if err := tailIface.Sync(); err != nil {
 			slog.Error(fmt.Errorf("failed to sync iface %s: %w", tailIface.Name, err).Error())
 			os.Exit(1)
 		} else {
-			slog.Info("synced", "interface", tailIface.Name)
+			slog.Debug("synced", "interface", tailIface.Name)
 		}
 	} else {
 		slog.Warn("could not sync; interface does not exist yet", "interface", tailIface.Name)

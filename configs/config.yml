@@ -1,2 +1,5 @@
 Iface: tailscale0
 Addrs: []
+ExecShell: /usr/bin/bash -c
+ExecUp: []
+ExecDown: []

@@ -3,7 +3,10 @@ package tnetmgr
 import (
 	"fmt"
 	"net"
+	"os/exec"
+	"strings"
 
+	"github.com/sagikazarmark/slog-shim"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 )
@@ -20,8 +23,22 @@ func ValidTailnetAddr4(ipnet *net.IPNet) bool {
 }
 
 type TailIf struct {
-	Name  string
-	Addrs []*netlink.Addr
+	Name      string
+	Addrs     []*netlink.Addr
+	ExecShell string
+	ExecUp    []string
+	ExecDown  []string
+}
+
+func (t *TailIf) createShellCommand(cmd string) *exec.Cmd {
+	fields := strings.Fields(t.ExecShell)
+	fields = append(fields, cmd)
+
+	execCmd := exec.Command(fields[0], fields[1:]...)
+	execCmd.Stderr = slog.NewLogLogger(slog.Default().Handler(), slog.LevelDebug).Writer()
+	execCmd.Stdout = slog.NewLogLogger(slog.Default().Handler(), slog.LevelDebug).Writer()
+
+	return execCmd
 }
 
 func (t *TailIf) validateNlLink(nlLink netlink.Link) bool {
@@ -74,6 +91,16 @@ func (t *TailIf) SetDown(nlLink netlink.Link) error {
 		}
 	}
 
+	for _, cmd := range t.ExecDown {
+		cmd := t.createShellCommand(cmd)
+
+		slog.Debug("ExecDown", "command", cmd)
+
+		if err := cmd.Run(); err != nil {
+			slog.Info("ExecDown command failed", "command", cmd, "error", err.Error())
+		}
+	}
+
 	return nil
 }
 
@@ -104,6 +131,16 @@ func (t *TailIf) SetUp(nlLink netlink.Link) error {
 			if err := netlink.AddrAdd(nlLink, k); err != nil {
 				return err
 			}
+		}
+	}
+
+	for _, cmd := range t.ExecUp {
+		cmd := t.createShellCommand(cmd)
+
+		slog.Debug("ExecUp", "command", cmd)
+
+		if err := cmd.Run(); err != nil {
+			slog.Info("ExecDown command failed", "command", cmd, "error", err.Error())
 		}
 	}
 
