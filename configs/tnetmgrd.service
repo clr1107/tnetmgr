@@ -1,0 +1,13 @@
+[Unit]
+Description=tailscale network manager
+After=tailscaled.service
+Requires=tailscaled.service
+BindsTo=tailscaled.service
+
+[Service]
+ExecStart=/usr/local/bin/tnetmgr
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
