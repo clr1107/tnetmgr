@@ -38,8 +38,23 @@ if ! command -v tailscale &>/dev/null; then
 fi
 
 if [ ! -f bin/tnetmgr ]; then
-    clog "Could not find compiled binary"
-    exit 1
+    if ask "Could not find compiled binary, would you like to build from source?"; then
+		silent make
+	else
+    	exit 1
+	fi
+
+	if [ ! -f bin/tnetmgr ]; then
+		clog "Still could not find the binary! Exiting."
+		exit 1
+	fi
+fi
+
+if [ ! "$(grep -Ei 'debian|buntu|mint' /etc/*release)" ]; then
+	if ! ask "You are not running a Debian derivative. Currently, your OS is not supported, do you want to install anyway?"; then
+		clog "Goodbye!"
+		exit 0
+	fi
 fi
 
 clog "Installing tailscale network manager service (tnetmgrd)"
