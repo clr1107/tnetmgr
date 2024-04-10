@@ -14,9 +14,10 @@ ExecUp:
   - iptables -D ts-input -i tailscale0 -j ACCEPT
   - iptables -N ts-fw
   - iptables -A ts-input -i tailscale0 -j ts-fw
+  - iptables -t nat -A POSTROUTING -s 100.64.0.0/10 -o eth0 -j MASQUERADE
 ```
 
-This configuration adds the address `172.24.24.1/32` to the interface tailscale0 whenever it is connected to Tailscale. I can then use this, for example, with the `--advertise-routes` option.
+This configuration adds the address `172.24.24.1/32` to the interface tailscale0 whenever it is connected to Tailscale. I can then use this, for example, with the `--advertise-routes` option. The last command allows this node to be an exit node on the external interface `eth0`.
 
 The iptables commands in ExecUp remove the default accept all rule added by Tailscale every time the interface comes up and replaces it with a new table, called `ts-fw`. This can then be configured. E.g.,
 
