@@ -161,7 +161,7 @@ func (t *TailIf) SetUp(nlLink netlink.Link) error {
 		slog.Debug("ExecUp", "command", cmd)
 
 		if err := cmd.Run(); err != nil {
-			slog.Warn("ExecDown command failed", "command", cmd, "error", err.Error())
+			slog.Warn("ExecUp command failed", "command", cmd, "error", err.Error())
 		}
 	}
 

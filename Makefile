@@ -13,6 +13,7 @@ default: build
 all: clean build_all install
 
 build:
+	export GOOS=linux
 	go build ${LDFLAGS} -o bin/${BINARY} ./cmd/main.go
 
 build_all:

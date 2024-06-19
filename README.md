@@ -15,6 +15,9 @@ ExecUp:
   - iptables -N ts-fw
   - iptables -A ts-input -i tailscale0 -j ts-fw
   - iptables -t nat -A POSTROUTING -s 100.64.0.0/10 -o eth0 -j MASQUERADE
+ExecDown:
+  - iptables -D ts-input -i tailscale0 -j ts-fw
+  - iptables -t nat -D postrouting -s 100.64.0.0/10 -o eth0 -j MASQUERADE
 ```
 
 This configuration adds the address `172.24.24.1/32` to the interface tailscale0 whenever it is connected to Tailscale. I can then use this, for example, with the `--advertise-routes` option. The last command allows this node to be an exit node on the external interface `eth0`.
@@ -26,4 +29,4 @@ The iptables commands in ExecUp remove the default accept all rule added by Tail
 -A ts-fw -i tailscale0 -j DROP
 ```
 
-This will allow me to connect to SSH via Tailscale and drop all other connections.
+This will allow me to connect to SSH via Tailscale and drop all other connections. I use this to allow SSH only from Tailscale.
